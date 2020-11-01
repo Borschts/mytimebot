@@ -25,7 +25,8 @@ print ("Error: unable to start thread.")
 
 
 def help_command(update, context):
-global cnt; cnt += 1; print(cnt)
+global cnt
+ cnt += 1; print(cnt)
 text = '🏠可用指令：\n/start 開始使用\n/help 叫出你在看的這個東西\n/time 看看下一次紀念日是什麼時候'
 msg = update.message.reply_text(text)
 try:
