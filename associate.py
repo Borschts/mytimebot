@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 cnt = 0
 
 def start(update, context):
-global cnt; cnt += 1; print(cnt)
+global cnt
+cnt += 1
+print(cnt)
 text = '嗨😉\n窩是 @Morishima_Hodaka_TG 和 @Shawn_N 的交往紀念日機器人'
 msg = update.message.reply_text(text)
 try:
@@ -26,7 +28,8 @@ print ("Error: unable to start thread.")
 
 def help_command(update, context):
 global cnt
- cnt += 1; print(cnt)
+cnt += 1
+print(cnt)
 text = '🏠可用指令：\n/start 開始使用\n/help 叫出你在看的這個東西\n/time 看看下一次紀念日是什麼時候'
 msg = update.message.reply_text(text)
 try:
@@ -47,7 +50,9 @@ time.sleep(2)
 context.bot.deleteMessage(chat_id=msg.chat.id, message_id=msg.message_id) 
 
 def getDiff(update, context):
-global cnt; cnt += 1; print(cnt)
+global cnt
+cnt += 1
+print(cnt)
 today = datetime.datetime.today()
 associate_day = datetime.datetime(today.year, 09, 18)
 diff = (associate_day - today).days
