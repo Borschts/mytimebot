@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 cnt = 0
 
 def start(update, context):
-global cnt
-cnt += 1
-print(cnt)
-text = '嗨😉\n窩是 @Morishima_Hodaka_TG 和 @Shawn_N 的交往紀念日機器人'
-msg = update.message.reply_text(text)
-try:
-_thread.start_new_thread(delete_message_thread, (update, context, msg, text))
+    global cnt
+    cnt += 1
+    print(cnt)
+    text = '嗨😉\n窩是 @Morishima_Hodaka_TG 和 @Shawn_N 的交往紀念日機器人'
+    msg = update.message.reply_text(text)
+    try:
+        _thread.start_new_thread(delete_message_thread, (update, context, msg, text))
 except:
 print ("Error: unable to start thread.")
 
