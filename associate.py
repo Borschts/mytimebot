@@ -1,80 +1,78 @@
 import logging
 import datetime
-import time
-import json
-import requests
-import _thread
-import urllib3
-from telegram.ext import Updater, CommandHandler, MessageHandler
+import os
+import pytz
+from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram import Update, ParseMode
+import threading
 
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-level=logging.INFO)
-
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
-cnt = 0
 
-def start(update, context):
-    global cnt
-    cnt += 1
-    print(cnt)
-    text = '嗨😉\n窩是 @Morishima_Hodaka_TG 和 @Shawn_N 的交往紀念日機器人'
-    msg = update.message.reply_text(text)
-    try:
-        _thread.start_new_thread(delete_message_thread, (update, context, msg, text))
-except:
-print ("Error: unable to start thread.")
+# hardcore way to config the start time
+DATE_FILE = "date.txt"
+tz = pytz.timezone('Asia/Taipei')
+
+if os.path.exists(DATE_FILE):
+    with open(DATE_FILE, 'r') as f:
+        start_date_str = f.read().strip()
+    start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').replace(tzinfo=tz)
+else:
+    start_date = datetime.datetime(2020, 9, 18, tzinfo=tz) #config your start time here
 
 
-def help_command(update, context):
-global cnt
-cnt += 1
-print(cnt)
-text = '🏠可用指令：\n/start 開始使用\n/help 叫出你在看的這個東西\n/time 看看下一次紀念日是什麼時候'
-msg = update.message.reply_text(text)
-try:
-_thread.start_new_thread(delete_message_thread, (update, context, msg, text))
-except:
-print ("Error: unable to start thread.")
+def start(update: Update, context: CallbackContext):
+    text = '嗨😉窩是 @PUT_USERNAME_HERE 和 @PUT_2nd_USERNAME_HERE 的交往紀念日機器人'
+    update.message.reply_text(text)
 
-def delete_message_thread(update, context, msg, text):
-cnt = 30
-while(cnt > 0):
-time.sleep(6)
-try:
-msg.edit_text(text= text + '\n⏰避免為群組帶來干擾，本訊息將於'+str(cnt-6)+'秒後自動刪除。', parse_mode='Markdown')
-cnt -= 6
-except Exception as e:
-print("Message {} got exception {}".format(msg, e))
-time.sleep(2)
-context.bot.deleteMessage(chat_id=msg.chat.id, message_id=msg.message_id) 
 
-def getDiff(update, context):
-global cnt
-cnt += 1
-print(cnt)
-today = datetime.datetime.today()
-associate_day = datetime.datetime(today.year, 09, 18)
-diff = (associate_day - today).days
-year = today.year + 1
-if diff < 0:
-next_associate_day = datetime.datetime(today.year + 1, 09, 18)
-diff = (next_associate_day - today).days
-year += 1
-text = '❤距離' + str(year) + '下次紀念日還有*' + str(diff) + ' *天.'
-msg = update.message.reply_text(text, parse_mode='Markdown')
+def help_command(update: Update, context: CallbackContext):
+    text = '🏠可用指令：\n/start 開始使用\n/help 叫出你在看的這個東西\n/time 看看下一次紀念日是什麼時候\n/setdate 設定紀念日日期\n倉庫：https://github.com/Borschts/mytimebot'
+    update.message.reply_text(text)
+
+# config start time via command
+def set_date(update: Update, context: CallbackContext):
+    if context.args:
+        try:
+            new_date = datetime.datetime.strptime(context.args[0], '%Y-%m-%d').replace(tzinfo=tz)
+            global start_date
+            start_date = new_date
+            with open(DATE_FILE, 'w') as f:
+                f.write(new_date.strftime('%Y-%m-%d'))
+            update.message.reply_text(f'Successfully set the new date to {new_date.strftime("%Y-%m-%d")}')
+        except ValueError:
+            update.message.reply_text('Invalid date format. Please use YYYY-MM-DD.')
+    else:
+        update.message.reply_text('Please provide a date in the format YYYY-MM-DD.')
+
+
+def get_diff(update: Update, context: CallbackContext):
+    today = datetime.datetime.now(tz)
+    days_together = (today - start_date).days
+    anniversary_date = start_date.replace(year=today.year)
+    
+    if today >= anniversary_date:
+        anniversary_date = anniversary_date.replace(year=today.year + 1)
+    
+    days_until_anniversary = (anniversary_date - today).days
+    years_together = anniversary_date.year - start_date.year
+    text = f'❤你們已經在一起*{days_together}天*了！\n' \
+           f'距離第{years_together}個紀念日還有*{days_until_anniversary}天*。'
+    update.message.reply_text(text, parse_mode='Markdown')
+
 
 def main():
-updater = Updater(token='TOKEN', use_context=True, request_kwargs={'read_timeout': 30, 'connect_timeout': 30})
-# 註冊handler
-dp = updater.dispatcher
-dp.add_handler(CommandHandler("start", start))
-dp.add_handler(CommandHandler("help", help_command))
-dp.add_handler(CommandHandler("time", getDiff))
+    updater = Updater(token='PUT_YOUR_TOKEN_HERE', use_context=True)
+    dp = updater.dispatcher
+    
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("time", get_diff))
+    dp.add_handler(CommandHandler("setdate", set_date))
 
-updater.start_polling()
-updater.idle()
+    updater.start_polling()
+    updater.idle()
 
 
-if name == '__main__':
-main()
+if __name__ == '__main__':
+    main()
